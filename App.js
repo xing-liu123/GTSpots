@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import TabNavigation from "./App/Navigations/TabNavigation";
 import { createStackNavigator } from "@react-navigation/stack";
-import BuildingDetails from "./App/Screens/BuildingDetails/BuildingDetails"; // Import the BuildingDetails component
+import BuildingDetails from "./App/Screens/BuildingDetails/BuildingDetails";
 
 const Stack = createStackNavigator();
 
