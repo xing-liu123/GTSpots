@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const buildingSchema = new mongoose.Schema({
   name: String,
@@ -13,4 +13,5 @@ const buildingSchema = new mongoose.Schema({
 
 const Building = mongoose.model("Building", buildingSchema);
 
-export default Building;
+module.exports = Building;
+

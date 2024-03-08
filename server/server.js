@@ -1,6 +1,6 @@
-import express from "express";
-import mongoose from "mongoose";
-import buildingRoutes from "./routes/buildingRoutes.js";
+const express = require("express");
+const mongoose = require("mongoose");
+const buildingRoutes = require("./routes/buildingRoutes");
 
 const app = express();
 const port = process.env.PORT || 5001;

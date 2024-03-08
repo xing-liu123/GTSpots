@@ -1,5 +1,6 @@
-import express from "express";
-import Building from "../models/building.js";
+const express = require("express");
+const path = require("path");
+const Building = require("../models/building");
 
 const router = express.Router();
 
@@ -13,6 +14,12 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/images/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const imagePath = path.join(__dirname, "../images", filename);
+  res.sendFile(imagePath);
+});
+
 // POST a new building
 router.post("/", async (req, res) => {
   try {
@@ -24,4 +31,5 @@ router.post("/", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
+
