@@ -1,23 +1,67 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
+import React, {useState} from "react";
+import HomeScreen from "./App/Screens/HomeScreen/HomeScreen";
+import { StyleSheet} from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import TabNavigation from "./App/Navigations/TabNavigation";
 import { createStackNavigator } from "@react-navigation/stack";
 import BuildingDetails from "./App/Screens/BuildingDetails/BuildingDetails";
 
 const Stack = createStackNavigator();
 
 export default function App() {
+  const [buildings, setBuildings] = useState([
+    {
+      id: "1",
+      name: "Clough Undergraduate Learning Commons",
+      status: "Available",
+      imageUrl: require("./assets/clough.jpeg"),
+      noiseLevel: "Quiet",
+      wifiStability: "Strong",
+      monitor: false,
+      socket: false,
+    },
+    {
+      id: "2",
+      name: "Price Gilbert Memorial Library",
+      status: "Available",
+      imageUrl: require("./assets/price-gilbert.jpeg"),
+      noiseLevel: "Quiet",
+      wifiStability: "Strong",
+      monitor: false,
+      socket: false,
+    },
+    {
+      id: "3",
+      name: "Crossland Tower",
+      status: "Available",
+      imageUrl: require("./assets/crossland-tower.jpeg"),
+      noiseLevel: "Quiet",
+      wifiStability: "Strong",
+      monitor: false,
+      socket: false,
+    },
+  ]);
+
+  const updateBuilding = (updatedBuilding) => {
+    setBuildings((prevBuildings) =>
+      prevBuildings.map((building) =>
+        building.id === updatedBuilding.id ? updatedBuilding : building
+      )
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <NavigationContainer>
-        <Stack.Navigator>
-          <Stack.Screen name="TabNav" component={TabNavigation} options={{ headerShown: false }} />
-          <Stack.Screen name="BuildingDetails" component={BuildingDetails} />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Home">
+          {(props) => <HomeScreen {...props} buildings={buildings} />}
+        </Stack.Screen>
+        <Stack.Screen name="BuildingDetails">
+          {(props) => (
+            <BuildingDetails {...props} updateBuilding={updateBuilding} />
+          )}
+        </Stack.Screen>
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 

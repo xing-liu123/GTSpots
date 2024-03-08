@@ -2,30 +2,6 @@ import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
 
-const buildings = [
-  {
-    id: "1",
-    name: "Clough Undergraduate Learning Commons",
-    status: "Available",
-    imageUrl: require("../../../assets/clough.jpeg"),
-  },
-
-  {
-    id: "2",
-    name: "Price Gilbert Memorial Library",
-    status: "Available",
-    imageUrl: require("../../../assets/price-gilbert.jpeg"),
-  },
-  {
-    id: "3",
-    name: "Crossland Tower",
-    status: "Available",
-    imageUrl: require("../../../assets/crossland-tower.jpeg"),
-  },
-  
-  
-];
-
 const getStatusColor = (status) => {
     switch (status) {
       case "Available":
@@ -39,7 +15,7 @@ const getStatusColor = (status) => {
     }
   };
 
-  export default function HomeScreen() {
+  export default function HomeScreen({buildings}) {
     const navigation = useNavigation();
   
     const renderBuilding = ({ item }) => (
@@ -55,13 +31,13 @@ const getStatusColor = (status) => {
   
     return (
       <View style={styles.container}>
-        <FlatList
-          data={buildings}
-          renderItem={renderBuilding}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-        />
-      </View>
+      <FlatList
+        data={buildings}
+        renderItem={renderBuilding}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+      />
+    </View>
     );
   }
 

@@ -1,28 +1,67 @@
-import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
-import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from "react";
 
 const statusOptions = ["Available", "Limited", "Full"];
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
 const wifiStabilityOptions = ["Strong", "Unstable", "Weak"];
 
-export default function BuildingDetails({ route }) {
+export default function BuildingDetails({ route, navigation, updateBuilding }) {
   const { building } = route.params;
   const [status, setStatus] = useState(building.status);
   const [noiseLevel, setNoiseLevel] = useState(building.noiseLevel || "Quiet");
   const [wifiStability, setWifiStability] = useState(building.wifiStability || "Strong");
   const [monitor, setMonitor] = useState(building.monitor || false);
   const [socket, setSocket] = useState(building.socket || false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (!hasUnsavedChanges) {
+        return;
+      }
+
+      e.preventDefault();
+
+      Alert.alert(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to go back?',
+        [
+          { text: "Don't leave", style: 'cancel', onPress: () => {} },
+          {
+            text: 'Go back',
+            style: 'destructive',
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, hasUnsavedChanges]);
 
   const handleUpdateStatus = () => {
-    // TODO: update logic
-    console.log("Updated data:", {
+    const updatedBuilding = {
+      ...building,
       status,
       noiseLevel,
       wifiStability,
       monitor,
       socket,
-    });
+    };
+    updateBuilding(updatedBuilding);
+    setHasUnsavedChanges(false);
+    Alert.alert('Success', 'Updates successfully saved.');
   };
+
+  useEffect(() => {
+    setHasUnsavedChanges(
+      status !== building.status ||
+      noiseLevel !== building.noiseLevel ||
+      wifiStability !== building.wifiStability ||
+      monitor !== building.monitor ||
+      socket !== building.socket
+    );
+  }, [status, noiseLevel, wifiStability, monitor, socket]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
