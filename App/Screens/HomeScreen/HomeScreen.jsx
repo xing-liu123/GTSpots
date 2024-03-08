@@ -1,27 +1,12 @@
-// import { View, Text } from "react-native";
-// import React from "react";
-
-// const buildings = [
-//   { id: "1", name: "", status: "Available" },
-//   { id: "2", name: "", status: "Full" },
-// ];
-
-// export default function HomeScreen() {
-//   return (
-//     <View>
-//       <Text>Home</Text>
-//     </View>
-//   );
-// }
-
 import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
+import BuildingDetails from "../BuildingDetails/BuildingDetails";
 
 const buildings = [
   {
     id: "1",
-    name: "Building A",
+    name: "Clough Undergraduate Learning Commons",
     status: "Available",
     imageUrl: require("../../../assets/clough.jpeg"),
   },
@@ -36,7 +21,7 @@ export default function HomeScreen() {
       style={styles.buildingContainer}
       onPress={() => navigation.navigate("BuildingDetails", { building: item })}
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.buildingImage} />
+      <Image source={item.imageUrl} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{item.name}</Text>
       <Text style={styles.buildingStatus}>{item.status}</Text>
     </TouchableOpacity>
