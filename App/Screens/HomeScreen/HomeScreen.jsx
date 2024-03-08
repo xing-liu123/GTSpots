@@ -17,7 +17,6 @@ const getStatusColor = (status) => {
 
   export default function HomeScreen({buildings}) {
     const navigation = useNavigation();
-  
     const renderBuilding = ({ item }) => (
       <TouchableOpacity
         style={styles.buildingContainer}
@@ -31,6 +30,7 @@ const getStatusColor = (status) => {
   
     return (
       <View style={styles.container}>
+        <Text style={styles.heading}>{"Available Study Locations"}</Text>
       <FlatList
         data={buildings}
         renderItem={renderBuilding}
@@ -49,9 +49,9 @@ const styles = {
     paddingVertical: 24,
   },
   heading: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 25,
   },
   buildingContainer: {
     flex: 1,
@@ -63,7 +63,7 @@ const styles = {
     alignItems: "center",
   },
   buildingImage: {
-    width: 100,
+    width: 150,
     height: 100,
     borderRadius: 8,
   },

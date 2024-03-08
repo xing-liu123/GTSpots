@@ -160,8 +160,8 @@ const styles = {
     alignItems: "center",
   },
   buildingImage: {
-    width: 200,
-    height: 200,
+    width: 280,
+    height: 190,
     borderRadius: 8,
     marginBottom: 16,
   },
@@ -227,13 +227,18 @@ const styles = {
     fontWeight: "bold",
   },
   updateButton: {
-    backgroundColor: "blue",
+    backgroundColor: "#007fff",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 4,
+    borderRadius: 10,
+    width: 130,
+    height: 45,
+    justifyContent: 'center'
   },
   updateButtonText: {
     color: "white",
+    fontSize: 14,
     fontWeight: "bold",
+    textAlign: 'center',
   },
 };
