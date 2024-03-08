@@ -10,11 +10,11 @@ Campus Study Spots is a mobile application built with React Native that allows s
 
 ## Installation
 1. Clone the repository:
-
-2. Navigate to the project directory:
+`git clone https://github.com/xing-liu123/GTSpots.git`
+3. Navigate to the project directory:
 cd campus-study-spots
 
-3. Install the dependencies:
+4. Install the dependencies:
 
 npm install
 
