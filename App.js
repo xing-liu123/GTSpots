@@ -39,6 +39,16 @@ export default function App() {
       monitor: false,
       socket: false,
     },
+    {
+      id: "4",
+      name: "Klaus Advanced Computing Building",
+      status: "Available",
+      imageUrl: require("./assets/klaus-building.jpeg"),
+      noiseLevel: "Quiet",
+      wifiStability: "Strong",
+      monitor: false,
+      socket: false,
+    },
   ]);
 
   const updateBuilding = (updatedBuilding) => {
@@ -52,7 +62,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home">
+        <Stack.Screen name="Location">
           {(props) => <HomeScreen {...props} buildings={buildings} />}
         </Stack.Screen>
         <Stack.Screen name="BuildingDetails">
