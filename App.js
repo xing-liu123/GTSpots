@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import HomeScreen from "./App/Screens/HomeScreen/HomeScreen";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -8,55 +8,49 @@ import BuildingDetails from "./App/Screens/BuildingDetails/BuildingDetails";
 const Stack = createStackNavigator();
 
 export default function App() {
-  const [buildings, setBuildings] = useState([
-    {
-      id: "1",
-      name: "Clough Undergraduate Learning Commons",
-      status: "Available",
-      imageUrl: require("./assets/clough.jpeg"),
-      noiseLevel: "Quiet",
-      wifiStability: "Strong",
-      monitor: false,
-      socket: false,
-    },
-    {
-      id: "2",
-      name: "Price Gilbert Memorial Library",
-      status: "Available",
-      imageUrl: require("./assets/price-gilbert.jpeg"),
-      noiseLevel: "Quiet",
-      wifiStability: "Strong",
-      monitor: false,
-      socket: false,
-    },
-    {
-      id: "3",
-      name: "Crossland Tower",
-      status: "Available",
-      imageUrl: require("./assets/crossland-tower.jpeg"),
-      noiseLevel: "Quiet",
-      wifiStability: "Strong",
-      monitor: false,
-      socket: false,
-    },
-    {
-      id: "4",
-      name: "Klaus Advanced Computing Building",
-      status: "Available",
-      imageUrl: require("./assets/klaus-building.jpeg"),
-      noiseLevel: "Quiet",
-      wifiStability: "Strong",
-      monitor: false,
-      socket: false,
-    },
-  ]);
+  const [buildings, setBuildings] = useState([]);
 
-  const updateBuilding = (updatedBuilding) => {
-    setBuildings((prevBuildings) =>
-      prevBuildings.map((building) =>
-        building.id === updatedBuilding.id ? updatedBuilding : building
-      )
-    );
+  useEffect(() => {
+    fetchBuildings();
+  }, []);
+
+  const fetchBuildings = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/api/buildings");
+      if (!response.ok) {
+        throw new Error("Error fetching buildings");
+      }
+      const data = await response.json();
+      setBuildings(data);
+    } catch (error) {
+      console.error("Error fetching buildings:", error);
+    }
+  };
+
+  const updateBuilding = async (updatedBuilding) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5001/api/buildings/${updatedBuilding._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedBuilding),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Error updating building");
+      }
+      const data = await response.json();
+      setBuildings((prevBuildings) =>
+        prevBuildings.map((building) =>
+          building._id === data._id ? data : building
+        )
+      );
+    } catch (error) {
+      console.error("Error updating building:", error);
+    }
   };
 
   return (

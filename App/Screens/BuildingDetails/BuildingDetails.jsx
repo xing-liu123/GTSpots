@@ -1,4 +1,11 @@
-import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 
 const statusOptions = ["Available", "Limited", "Full"];
@@ -9,13 +16,15 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
   const { building } = route.params;
   const [status, setStatus] = useState(building.status);
   const [noiseLevel, setNoiseLevel] = useState(building.noiseLevel || "Quiet");
-  const [wifiStability, setWifiStability] = useState(building.wifiStability || "Strong");
+  const [wifiStability, setWifiStability] = useState(
+    building.wifiStability || "Strong"
+  );
   const [monitor, setMonitor] = useState(building.monitor || false);
   const [socket, setSocket] = useState(building.socket || false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
       if (!hasUnsavedChanges) {
         return;
       }
@@ -23,13 +32,13 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
       e.preventDefault();
 
       Alert.alert(
-        'Unsaved Changes',
-        'You have unsaved changes. Are you sure you want to go back?',
+        "Unsaved Changes",
+        "You have unsaved changes. Are you sure you want to go back?",
         [
-          { text: "Don't leave", style: 'cancel', onPress: () => {} },
+          { text: "Don't leave", style: "cancel", onPress: () => {} },
           {
-            text: 'Go back',
-            style: 'destructive',
+            text: "Go back",
+            style: "destructive",
             onPress: () => navigation.dispatch(e.data.action),
           },
         ]
@@ -39,7 +48,21 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
     return unsubscribe;
   }, [navigation, hasUnsavedChanges]);
 
-  const handleUpdateStatus = () => {
+  // const handleUpdateStatus = () => {
+  //   const updatedBuilding = {
+  //     ...building,
+  //     status,
+  //     noiseLevel,
+  //     wifiStability,
+  //     monitor,
+  //     socket,
+  //   };
+  //   updateBuilding(updatedBuilding);
+  //   setHasUnsavedChanges(false);
+  //   Alert.alert('Success', 'Updates successfully saved.');
+  // };
+
+  const handleUpdateStatus = async () => {
     const updatedBuilding = {
       ...building,
       status,
@@ -48,24 +71,29 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
       monitor,
       socket,
     };
-    updateBuilding(updatedBuilding);
+    await updateBuilding(updatedBuilding);
     setHasUnsavedChanges(false);
-    Alert.alert('Success', 'Updates successfully saved.');
+    Alert.alert("Success", "Updates successfully saved.");
   };
 
   useEffect(() => {
     setHasUnsavedChanges(
       status !== building.status ||
-      noiseLevel !== building.noiseLevel ||
-      wifiStability !== building.wifiStability ||
-      monitor !== building.monitor ||
-      socket !== building.socket
+        noiseLevel !== building.noiseLevel ||
+        wifiStability !== building.wifiStability ||
+        monitor !== building.monitor ||
+        socket !== building.socket
     );
   }, [status, noiseLevel, wifiStability, monitor, socket]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Image source={building.imageUrl} style={styles.buildingImage} />
+      <Image
+        source={{
+          uri: `http://localhost:5001/api/buildings/images/${building.imageUrl}`,
+        }}
+        style={styles.buildingImage}
+      />
       <Text style={styles.buildingName}>{building.name}</Text>
 
       <View style={styles.optionContainer}>
@@ -144,7 +172,10 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.updateButton} onPress={handleUpdateStatus}>
+      <TouchableOpacity
+        style={styles.updateButton}
+        onPress={handleUpdateStatus}
+      >
         <Text style={styles.updateButtonText}>Update Status</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -233,12 +264,12 @@ const styles = {
     borderRadius: 10,
     width: 130,
     height: 45,
-    justifyContent: 'center'
+    justifyContent: "center",
   },
   updateButtonText: {
     color: "white",
     fontSize: 14,
     fontWeight: "bold",
-    textAlign: 'center',
+    textAlign: "center",
   },
 };
