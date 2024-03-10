@@ -3,34 +3,33 @@ import React from "react";
 import { useNavigation } from "@react-navigation/native";
 
 const getStatusColor = (status) => {
-    switch (status) {
-      case "Available":
-        return "green";
-      case "Limited":
-        return "orange";
-      case "Full":
-        return "red";
-      default:
-        return "black";
-    }
-  };
+  switch (status) {
+    case "Available":
+      return "green";
+    case "Limited":
+      return "orange";
+    case "Full":
+      return "red";
+    default:
+      return "black";
+  }
+};
 
-  export default function HomeScreen({buildings}) {
-    const navigation = useNavigation();
-    const renderBuilding = ({ item }) => (
-      <TouchableOpacity
-        style={styles.buildingContainer}
-        onPress={() => navigation.navigate("BuildingDetails", { building: item })}
-      >
-        <Image source={item.imageUrl} style={styles.buildingImage} />
-        <Text style={styles.buildingName}>{item.name}</Text>
-        <Text style={{ color: getStatusColor(item.status) }}>{item.status}</Text>
-      </TouchableOpacity>
-    );
-  
-    return (
-      <View style={styles.container}>
-        <Text style={styles.heading}>{"Available Study Locations"}</Text>
+export default function HomeScreen({ buildings }) {
+  const navigation = useNavigation();
+  const renderBuilding = ({ item }) => (
+    <TouchableOpacity
+      style={styles.buildingContainer}
+      onPress={() => navigation.navigate("Building Details", { building: item })}
+    >
+      <Image source={item.imageUrl} style={styles.buildingImage} />
+      <Text style={styles.buildingName}>{item.name}</Text>
+      <Text style={{ color: getStatusColor(item.status) }}>{item.status}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
       <FlatList
         data={buildings}
         renderItem={renderBuilding}
@@ -38,8 +37,8 @@ const getStatusColor = (status) => {
         numColumns={2}
       />
     </View>
-    );
-  }
+  );
+}
 
 const styles = {
   container: {
@@ -47,11 +46,6 @@ const styles = {
     backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingVertical: 24,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 25,
   },
   buildingContainer: {
     flex: 1,
