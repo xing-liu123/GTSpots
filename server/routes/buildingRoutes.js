@@ -31,5 +31,21 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    const updatedBuilding = await Building.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!updatedBuilding) {
+      return res.status(404).json({ error: "Building not found" });
+    }
+    res.json(updatedBuilding);
+  } catch (err) {
+    res.status(500).json({ error: "Error updating building" });
+  }
+});
+
 module.exports = router;
 
