@@ -8,6 +8,10 @@ Campus Study Spots is a mobile application built with React Native that allows s
 - Indicate the presence of monitors and sockets in each building
 - Reminders for successful updates and warnings for unsaved changes
 
+## Prerequisites
+- Node.js and npm (Node Package Manager)
+- MongoDB (installed locally)
+
 ## Installation
 1. Clone the repository:
 `git clone https://github.com/xing-liu123/GTSpots.git`
@@ -15,10 +19,16 @@ Campus Study Spots is a mobile application built with React Native that allows s
 2. Install the dependencies:
 `npm install`
 
-3. Start the development server:
+3. Install MongoDB locally on your machine. You can download and install MongoDB from the official website: `https://www.mongodb.com/try/download/community`
+
+4. Start the MongoDB server by running the following command in a separate terminal: `mongod`
+
+5. Initialize the seed database by running the following command in the project directory: `node server/seedDatabase.js`
+
+6. Start the development server:
 `npm start`
 
-4. Follow the instructions in the terminal to run the app on an iOS or Android simulator or on a physical device.
+8. Follow the instructions in the terminal to run the app on an iOS or Android simulator or on a physical device.
 
 ## Usage
 - Launch the Campus Study Spots app on your device.
@@ -32,3 +42,6 @@ Campus Study Spots is a mobile application built with React Native that allows s
 - React Native
 - React Navigation
 - Expo
+- Node.js
+- Express.js
+- MongoDB
