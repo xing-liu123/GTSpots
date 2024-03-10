@@ -37,12 +37,6 @@ export default function HomeScreen({ buildings }) {
 
   return (
     <View style={styles.container}>
-      {/* <FlatList
-        data={buildings}
-        renderItem={renderBuilding}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-      /> */}
       <FlatList
         data={buildings}
         renderItem={renderBuilding}
