@@ -17,19 +17,13 @@ const getStatusColor = (status) => {
 
 export default function HomeScreen({ buildings }) {
   const navigation = useNavigation();
+
   const renderBuilding = ({ item }) => (
     <TouchableOpacity
       style={styles.buildingContainer}
-      onPress={() =>
-        navigation.navigate("Building Details", { building: item })
-      }
+      onPress={() => navigation.navigate("Building Details", { building: item })}
     >
-      <Image
-        source={{
-          uri: `http://localhost:5001/api/buildings/images/${item.imageUrl}`,
-        }}
-        style={styles.buildingImage}
-      />
+      <Image source={{ uri: item.imageUrl }} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{item.name}</Text>
       <Text style={{ color: getStatusColor(item.status) }}>{item.status}</Text>
     </TouchableOpacity>
@@ -40,7 +34,7 @@ export default function HomeScreen({ buildings }) {
       <FlatList
         data={buildings}
         renderItem={renderBuilding}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => item.id}
         numColumns={2}
       />
     </View>

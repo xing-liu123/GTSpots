@@ -48,20 +48,6 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
     return unsubscribe;
   }, [navigation, hasUnsavedChanges]);
 
-  // const handleUpdateStatus = () => {
-  //   const updatedBuilding = {
-  //     ...building,
-  //     status,
-  //     noiseLevel,
-  //     wifiStability,
-  //     monitor,
-  //     socket,
-  //   };
-  //   updateBuilding(updatedBuilding);
-  //   setHasUnsavedChanges(false);
-  //   Alert.alert('Success', 'Updates successfully saved.');
-  // };
-
   const handleUpdateStatus = async () => {
     const updatedBuilding = {
       ...building,
@@ -88,12 +74,7 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Image
-        source={{
-          uri: `http://localhost:5001/api/buildings/images/${building.imageUrl}`,
-        }}
-        style={styles.buildingImage}
-      />
+      <Image source={{ uri: building.imageUrl }} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{building.name}</Text>
 
       <View style={styles.optionContainer}>
