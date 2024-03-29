@@ -1,6 +1,8 @@
 import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
-import React from "react";
-import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+
+const API_BASE_URL = "http://172.16.39.27:5001";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -15,13 +17,35 @@ const getStatusColor = (status) => {
   }
 };
 
-export default function HomeScreen({ buildings }) {
+export default function HomeScreen() {
   const navigation = useNavigation();
+  const [buildings, setBuildings] = useState([]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchBuildings = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/buildings`);
+          if (!response.ok) {
+            throw new Error("Error fetching buildings");
+          }
+          const data = await response.json();
+          setBuildings(data);
+        } catch (error) {
+          console.error("Error fetching buildings:", error);
+        }
+      };
+
+      fetchBuildings();
+    }, [])
+  );
 
   const renderBuilding = ({ item }) => (
     <TouchableOpacity
       style={styles.buildingContainer}
-      onPress={() => navigation.navigate("Building Details", { building: item })}
+      onPress={() =>
+        navigation.navigate("Building Details", { building: item })
+      }
     >
       <Image source={{ uri: item.imageUrl }} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{item.name}</Text>

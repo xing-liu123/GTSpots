@@ -6,7 +6,21 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import moment from "moment";
+import {
+  getFirestore,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  onSnapshot,
+} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { firebaseConfig } from "../../Config/firebase";
+import { useFocusEffect } from "@react-navigation/native";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const statusOptions = ["Available", "Limited", "Full"];
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
@@ -14,6 +28,7 @@ const wifiStabilityOptions = ["Strong", "Unstable", "Weak"];
 
 export default function BuildingDetails({ route, navigation, updateBuilding }) {
   const { building } = route.params;
+  const [buildingData, setBuildingData] = useState(building);
   const [status, setStatus] = useState(building.status);
   const [noiseLevel, setNoiseLevel] = useState(building.noiseLevel || "Quiet");
   const [wifiStability, setWifiStability] = useState(
@@ -21,24 +36,76 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
   );
   const [monitor, setMonitor] = useState(building.monitor || false);
   const [socket, setSocket] = useState(building.socket || false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [currentTime, setCurrentTime] = useState(Date.now() / 1000);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const unsubscribe = onSnapshot(
+        doc(db, "buildings", building.id),
+        (doc) => {
+          const updatedData = doc.data();
+          setBuildingData(updatedData);
+          setStatus(updatedData.status);
+          setNoiseLevel(updatedData.noiseLevel);
+          setWifiStability(updatedData.wifiStability);
+          setMonitor(updatedData.monitor);
+          setSocket(updatedData.socket);
+          setLastUpdateTime(
+            updatedData.lastUpdateTime
+              ? updatedData.lastUpdateTime.toDate()
+              : null
+          );
+        }
+      );
+
+      return () => unsubscribe();
+    }, [building.id])
+  );
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentTime(Date.now() / 1000);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const getTimeDifference = () => {
+    if (!lastUpdateTime) return null;
+
+    const difference = currentTime - lastUpdateTime.getTime() / 1000;
+    const duration = moment.duration(difference, "seconds");
+
+    if (duration.asHours() >= 1) {
+      return `${Math.floor(duration.asHours())} hours ago`;
+    } else if (duration.asMinutes() >= 1) {
+      return `${Math.floor(duration.asMinutes())} minutes ago`;
+    } else {
+      return "Just now";
+    }
+  };
 
   const handleUpdateStatus = async () => {
     const updatedBuilding = {
-      ...building,
       status,
       noiseLevel,
       wifiStability,
       monitor,
       socket,
+      lastUpdateTime: serverTimestamp(),
     };
-    await updateBuilding(updatedBuilding);
+    await updateDoc(doc(db, "buildings", building.id), updatedBuilding);
     Alert.alert("Success", "Updates successfully saved.");
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Image source={{ uri: building.imageUrl }} style={styles.buildingImage} />
-      <Text style={styles.buildingName}>{building.name}</Text>
+      <Image
+        source={{ uri: buildingData.imageUrl }}
+        style={styles.buildingImage}
+      />
+      <Text style={styles.buildingName}>{buildingData.name}</Text>
 
       <View style={styles.optionContainer}>
         <Text style={styles.label}>Availability:</Text>
@@ -56,6 +123,9 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.updateTime}>
+          Last updated: {getTimeDifference()}
+        </Text>
       </View>
 
       <View style={styles.optionContainer}>
@@ -215,5 +285,10 @@ const styles = {
     fontSize: 14,
     fontWeight: "bold",
     textAlign: "center",
+  },
+  updateTime: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "gray",
   },
 };
