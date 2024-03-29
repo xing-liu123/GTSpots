@@ -6,7 +6,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 const statusOptions = ["Available", "Limited", "Full"];
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
@@ -21,32 +21,6 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
   );
   const [monitor, setMonitor] = useState(building.monitor || false);
   const [socket, setSocket] = useState(building.socket || false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
-      if (!hasUnsavedChanges) {
-        return;
-      }
-
-      e.preventDefault();
-
-      Alert.alert(
-        "Unsaved Changes",
-        "You have unsaved changes. Are you sure you want to go back?",
-        [
-          { text: "Don't leave", style: "cancel", onPress: () => {} },
-          {
-            text: "Go back",
-            style: "destructive",
-            onPress: () => navigation.dispatch(e.data.action),
-          },
-        ]
-      );
-    });
-
-    return unsubscribe;
-  }, [navigation, hasUnsavedChanges]);
 
   const handleUpdateStatus = async () => {
     const updatedBuilding = {
@@ -58,19 +32,8 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
       socket,
     };
     await updateBuilding(updatedBuilding);
-    setHasUnsavedChanges(false);
     Alert.alert("Success", "Updates successfully saved.");
   };
-
-  useEffect(() => {
-    setHasUnsavedChanges(
-      status !== building.status ||
-        noiseLevel !== building.noiseLevel ||
-        wifiStability !== building.wifiStability ||
-        monitor !== building.monitor ||
-        socket !== building.socket
-    );
-  }, [status, noiseLevel, wifiStability, monitor, socket]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

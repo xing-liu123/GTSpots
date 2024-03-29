@@ -92,11 +92,25 @@ export default function App() {
       <Stack.Navigator>
         {user ? (
           <>
-            <Stack.Screen name="Buildings" options={{ headerShown: false }}>
+            <Stack.Screen
+              name="Buildings"
+              options={{
+                title: "Buildings",
+                headerStyle: {
+                  backgroundColor: "#f5f5f5",
+                },
+                headerTintColor: "#333",
+                headerTitleStyle: {
+                  fontWeight: "bold",
+                },
+              }}
+            >
               {(props) => <HomeScreen {...props} buildings={buildings} />}
             </Stack.Screen>
             <Stack.Screen name="Building Details">
-              {(props) => <BuildingDetails {...props} updateBuilding={updateBuilding} />}
+              {(props) => (
+                <BuildingDetails {...props} updateBuilding={updateBuilding} />
+              )}
             </Stack.Screen>
           </>
         ) : (
