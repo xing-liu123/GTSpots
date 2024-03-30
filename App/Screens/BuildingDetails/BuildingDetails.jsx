@@ -14,10 +14,12 @@ import {
   updateDoc,
   serverTimestamp,
   onSnapshot,
+  increment,
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "../../Config/firebase";
 import { useFocusEffect } from "@react-navigation/native";
+import { auth } from "../../Config/firebase";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -38,30 +40,116 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
   const [socket, setSocket] = useState(building.socket || false);
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now() / 1000);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [hasDisliked, setHasDisliked] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [voteType, setVoteType] = useState(null);
+  const [isUpdateDisabled, setIsUpdateDisabled] = useState(true);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      const unsubscribe = onSnapshot(
-        doc(db, "buildings", building.id),
-        (doc) => {
-          const updatedData = doc.data();
-          setBuildingData(updatedData);
-          setStatus(updatedData.status);
-          setNoiseLevel(updatedData.noiseLevel);
-          setWifiStability(updatedData.wifiStability);
-          setMonitor(updatedData.monitor);
-          setSocket(updatedData.socket);
-          setLastUpdateTime(
-            updatedData.lastUpdateTime
-              ? updatedData.lastUpdateTime.toDate()
-              : null
-          );
-        }
+  const handleLike = async () => {
+    const userId = auth.currentUser.uid;
+    const buildingRef = doc(db, "buildings", building.id);
+
+    if (voteType === "like") {
+      // User has already liked, so remove the like
+      await updateDoc(buildingRef, {
+        likeCount: increment(-1),
+        [`votes.${userId}`]: null,
+      });
+      setHasVoted(false);
+      setVoteType(null);
+    } else {
+      // User hasn't liked or has disliked, so add/update the like
+      const updates = {
+        likeCount: increment(1),
+        [`votes.${userId}`]: "like",
+      };
+      if (voteType === "dislike") {
+        updates.dislikeCount = increment(-1);
+      }
+      await updateDoc(buildingRef, updates);
+      setHasVoted(true);
+      setVoteType("like");
+    }
+  };
+
+  const handleDislike = async () => {
+    const userId = auth.currentUser.uid;
+    const buildingRef = doc(db, "buildings", building.id);
+
+    if (voteType === "dislike") {
+      // User has already disliked, so remove the dislike
+      await updateDoc(buildingRef, {
+        dislikeCount: increment(-1),
+        [`votes.${userId}`]: null,
+      });
+      setHasVoted(false);
+      setVoteType(null);
+    } else {
+      // User hasn't disliked or has liked, so add/update the dislike
+      const updates = {
+        dislikeCount: increment(1),
+        [`votes.${userId}`]: "dislike",
+      };
+      if (voteType === "like") {
+        updates.likeCount = increment(-1);
+      }
+      await updateDoc(buildingRef, updates);
+      setHasVoted(true);
+      setVoteType("dislike");
+    }
+  };
+
+  const resetVotes = async () => {
+    const buildingRef = doc(db, "buildings", building.id);
+    await updateDoc(buildingRef, {
+      likeCount: 0,
+      dislikeCount: 0,
+      votes: {},
+    });
+    setHasVoted(false);
+    setVoteType(null);
+  };
+
+  useEffect(() => {
+    const userId = auth.currentUser.uid;
+    const buildingRef = doc(db, "buildings", building.id);
+    const unsubscribe = onSnapshot(buildingRef, (doc) => {
+      const updatedData = doc.data();
+      setBuildingData(updatedData);
+      setStatus(updatedData.status);
+      setNoiseLevel(updatedData.noiseLevel);
+      setWifiStability(updatedData.wifiStability);
+      setMonitor(updatedData.monitor);
+      setSocket(updatedData.socket);
+      setLastUpdateTime(
+        updatedData.lastUpdateTime ? updatedData.lastUpdateTime.toDate() : null
       );
 
-      return () => unsubscribe();
-    }, [building.id])
-  );
+      // Check if the user has already voted
+      if (updatedData.votes && updatedData.votes[userId]) {
+        setHasVoted(true);
+        setVoteType(updatedData.votes[userId]);
+      } else {
+        setHasVoted(false);
+        setVoteType(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [building.id]);
+
+  useEffect(() => {
+    // Check if any fields have been modified (except likes/dislikes)
+    const isModified =
+      status !== buildingData.status ||
+      noiseLevel !== buildingData.noiseLevel ||
+      wifiStability !== buildingData.wifiStability ||
+      monitor !== buildingData.monitor ||
+      socket !== buildingData.socket;
+
+    setIsUpdateDisabled(!isModified);
+  }, [status, noiseLevel, wifiStability, monitor, socket, buildingData]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -97,6 +185,11 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
     };
     await updateDoc(doc(db, "buildings", building.id), updatedBuilding);
     Alert.alert("Success", "Updates successfully saved.");
+    if (status !== buildingData.status) {
+      resetVotes();
+    }
+
+    setIsUpdateDisabled(true); 
   };
 
   return (
@@ -126,6 +219,30 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
         <Text style={styles.updateTime}>
           Last updated: {getTimeDifference()}
         </Text>
+        <View style={styles.votingContainer}>
+          <TouchableOpacity
+            style={[
+              styles.voteButton,
+              voteType === "like" && styles.activeVoteButton,
+            ]}
+            onPress={handleLike}
+          >
+            <Text style={styles.voteButtonText}>
+              👍 {buildingData.likeCount || 0}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.voteButton,
+              voteType === "dislike" && styles.activeVoteButton,
+            ]}
+            onPress={handleDislike}
+          >
+            <Text style={styles.voteButtonText}>
+              👎 {buildingData.dislikeCount || 0}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.optionContainer}>
@@ -187,8 +304,9 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
       </View>
 
       <TouchableOpacity
-        style={styles.updateButton}
+        style={[styles.updateButton, isUpdateDisabled && styles.disabledButton]}
         onPress={handleUpdateStatus}
+        disabled={isUpdateDisabled}
       >
         <Text style={styles.updateButtonText}>Update Status</Text>
       </TouchableOpacity>
@@ -290,5 +408,27 @@ const styles = {
     marginTop: 8,
     fontSize: 14,
     color: "gray",
+  },
+  votingContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+  },
+  voteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  activeVoteButton: {
+    backgroundColor: "#e0e0e0",
+  },
+  voteButtonText: {
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
 };
