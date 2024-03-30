@@ -8,6 +8,7 @@ import { auth } from "./App/Config/firebase";
 import LoginScreen from "./App/Screens/LoginScreen/LoginScreen";
 
 const Stack = createStackNavigator();
+const API_BASE_URL = "http://172.16.39.27:5001";
 
 export default function App() {
   const [buildings, setBuildings] = useState([]);
@@ -33,7 +34,7 @@ export default function App() {
 
   const fetchBuildings = async () => {
     try {
-      const response = await fetch("http://172.16.39.27:5001/api/buildings");
+      const response = await fetch(`${API_BASE_URL}/api/buildings`);
       if (!response.ok) {
         throw new Error("Error fetching buildings");
       }
@@ -44,25 +45,22 @@ export default function App() {
     }
   };
 
-  const updateBuilding = async (updatedBuilding) => {
+  const updateBuilding = async ({ id, ...updatedData }) => {
     try {
-      const response = await fetch(
-        `http://172.16.39.27:5001/api/buildings/${updatedBuilding._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedBuilding),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/buildings/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
       if (!response.ok) {
         throw new Error("Error updating building");
       }
       const data = await response.json();
       setBuildings((prevBuildings) =>
         prevBuildings.map((building) =>
-          building._id === data._id ? data : building
+          building.id === data.id ? data : building
         )
       );
     } catch (error) {
@@ -96,7 +94,16 @@ export default function App() {
           <>
             <Stack.Screen
               name="Buildings"
-              options={{ headerShown: false }}
+              options={{
+                title: "Buildings",
+                headerStyle: {
+                  backgroundColor: "#f5f5f5",
+                },
+                headerTintColor: "#333",
+                headerTitleStyle: {
+                  fontWeight: "bold",
+                },
+              }}
             >
               {(props) => <HomeScreen {...props} buildings={buildings} />}
             </Stack.Screen>
