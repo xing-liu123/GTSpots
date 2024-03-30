@@ -20,18 +20,18 @@ import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "../../Config/firebase";
 import { useFocusEffect } from "@react-navigation/native";
 import { auth } from "../../Config/firebase";
+import Slider from "@react-native-community/slider";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const statusOptions = ["Available", "Limited", "Full"];
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
 const wifiStabilityOptions = ["Strong", "Unstable", "Weak"];
 
 export default function BuildingDetails({ route, navigation, updateBuilding }) {
   const { building } = route.params;
   const [buildingData, setBuildingData] = useState(building);
-  const [status, setStatus] = useState(building.status);
+
   const [noiseLevel, setNoiseLevel] = useState(building.noiseLevel || "Quiet");
   const [wifiStability, setWifiStability] = useState(
     building.wifiStability || "Strong"
@@ -45,6 +45,7 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
   const [hasVoted, setHasVoted] = useState(false);
   const [voteType, setVoteType] = useState(null);
   const [isUpdateDisabled, setIsUpdateDisabled] = useState(true);
+  const [occupancyLevel, setOccupancyLevel] = useState(0);
 
   const handleLike = async () => {
     const userId = auth.currentUser.uid;
@@ -117,7 +118,6 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
     const unsubscribe = onSnapshot(buildingRef, (doc) => {
       const updatedData = doc.data();
       setBuildingData(updatedData);
-      setStatus(updatedData.status);
       setNoiseLevel(updatedData.noiseLevel);
       setWifiStability(updatedData.wifiStability);
       setMonitor(updatedData.monitor);
@@ -125,6 +125,7 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
       setLastUpdateTime(
         updatedData.lastUpdateTime ? updatedData.lastUpdateTime.toDate() : null
       );
+      setOccupancyLevel(updatedData.occupancyLevel || 0);
 
       // Check if the user has already voted
       if (updatedData.votes && updatedData.votes[userId]) {
@@ -140,16 +141,23 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
   }, [building.id]);
 
   useEffect(() => {
-    // Check if any fields have been modified (except likes/dislikes)
+    // Check if any fields have been modified
     const isModified =
-      status !== buildingData.status ||
+      occupancyLevel !== buildingData.occupancyLevel ||
       noiseLevel !== buildingData.noiseLevel ||
       wifiStability !== buildingData.wifiStability ||
       monitor !== buildingData.monitor ||
       socket !== buildingData.socket;
 
     setIsUpdateDisabled(!isModified);
-  }, [status, noiseLevel, wifiStability, monitor, socket, buildingData]);
+  }, [
+    occupancyLevel,
+    noiseLevel,
+    wifiStability,
+    monitor,
+    socket,
+    buildingData,
+  ]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -176,20 +184,20 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
 
   const handleUpdateStatus = async () => {
     const updatedBuilding = {
-      status,
       noiseLevel,
       wifiStability,
       monitor,
       socket,
       lastUpdateTime: serverTimestamp(),
+      occupancyLevel,
     };
     await updateDoc(doc(db, "buildings", building.id), updatedBuilding);
     Alert.alert("Success", "Updates successfully saved.");
-    if (status !== buildingData.status) {
+    setIsUpdateDisabled(true);
+
+    if (occupancyLevel !== buildingData.occupancyLevel) {
       resetVotes();
     }
-
-    setIsUpdateDisabled(true); 
   };
 
   return (
@@ -201,20 +209,17 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
       <Text style={styles.buildingName}>{buildingData.name}</Text>
 
       <View style={styles.optionContainer}>
-        <Text style={styles.label}>Availability:</Text>
-        <View style={styles.circleContainer}>
-          {statusOptions.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.circle,
-                status === option ? styles.selectedCircle : null,
-              ]}
-              onPress={() => setStatus(option)}
-            >
-              <Text style={styles.circleText}>{option}</Text>
-            </TouchableOpacity>
-          ))}
+        <Text style={styles.label}>Occupancy Level:</Text>
+        <View style={styles.occupancyLevelContainer}>
+          <Text style={styles.occupancyLevelText}>{occupancyLevel}%</Text>
+          <Slider
+            style={styles.occupancyLevelSlider}
+            minimumValue={0}
+            maximumValue={100}
+            step={1}
+            value={occupancyLevel}
+            onValueChange={setOccupancyLevel}
+          />
         </View>
         <Text style={styles.updateTime}>
           Last updated: {getTimeDifference()}
@@ -308,7 +313,14 @@ export default function BuildingDetails({ route, navigation, updateBuilding }) {
         onPress={handleUpdateStatus}
         disabled={isUpdateDisabled}
       >
-        <Text style={styles.updateButtonText}>Update Status</Text>
+        <Text
+          style={[
+            styles.updateButtonText,
+            isUpdateDisabled && styles.disabledButtonText,
+          ]}
+        >
+          Update Status
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -404,6 +416,17 @@ const styles = {
     fontWeight: "bold",
     textAlign: "center",
   },
+  occupancyLevelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  occupancyLevelText: {
+    marginRight: 10,
+    fontSize: 16,
+  },
+  occupancyLevelSlider: {
+    flex: 1,
+  },
   updateTime: {
     marginTop: 8,
     fontSize: 14,
@@ -430,5 +453,8 @@ const styles = {
   },
   disabledButton: {
     backgroundColor: "#ccc",
+  },
+  disabledButtonText: {
+    color: "#888",
   },
 };

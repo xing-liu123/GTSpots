@@ -4,16 +4,13 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 const API_BASE_URL = "http://172.16.39.27:5001";
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case "Available":
-      return "green";
-    case "Limited":
-      return "orange";
-    case "Full":
-      return "red";
-    default:
-      return "black";
+const getOccupancyLevelColor = (occupancyLevel) => {
+  if (occupancyLevel >= 0 && occupancyLevel <= 35) {
+    return "green";
+  } else if (occupancyLevel >= 36 && occupancyLevel <= 70) {
+    return "orange";
+  } else {
+    return "red";
   }
 };
 
@@ -35,7 +32,6 @@ export default function HomeScreen() {
           console.error("Error fetching buildings:", error);
         }
       };
-
       fetchBuildings();
     }, [])
   );
@@ -43,13 +39,13 @@ export default function HomeScreen() {
   const renderBuilding = ({ item }) => (
     <TouchableOpacity
       style={styles.buildingContainer}
-      onPress={() =>
-        navigation.navigate("Building Details", { building: item })
-      }
+      onPress={() => navigation.navigate("Building Details", { building: item })}
     >
       <Image source={{ uri: item.imageUrl }} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{item.name}</Text>
-      <Text style={{ color: getStatusColor(item.status) }}>{item.status}</Text>
+      <Text style={{ color: getOccupancyLevelColor(item.occupancyLevel) }}>
+        Occupancy: {item.occupancyLevel}%
+      </Text>
     </TouchableOpacity>
   );
 
@@ -90,10 +86,5 @@ const styles = {
     fontSize: 16,
     fontWeight: "bold",
     marginTop: 8,
-  },
-  buildingStatus: {
-    fontSize: 14,
-    color: "#888",
-    marginTop: 4,
   },
 };
