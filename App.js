@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import HomeScreen from "./App/Screens/HomeScreen/HomeScreen";
-import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import BuildingDetails from "./App/Screens/BuildingDetails/BuildingDetails";
@@ -73,20 +72,6 @@ export default function App() {
     return null;
   }
 
-  // return (
-  //   <NavigationContainer>
-  //     <Stack.Navigator>
-  //       <Stack.Screen name="Buildings">
-  //         {(props) => <HomeScreen {...props} buildings={buildings} />}
-  //       </Stack.Screen>
-  //       <Stack.Screen name="Building Details">
-  //         {(props) => (
-  //           <BuildingDetails {...props} updateBuilding={updateBuilding} />
-  //         )}
-  //       </Stack.Screen>
-  //     </Stack.Navigator>
-  //   </NavigationContainer>
-  // );
   return (
     <NavigationContainer>
       <Stack.Navigator>
@@ -124,11 +109,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: 20,
-  },
-});
