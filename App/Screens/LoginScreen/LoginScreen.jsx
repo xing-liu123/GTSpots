@@ -12,29 +12,26 @@ import {
 } from "firebase/auth";
 import { auth } from "../../Config/firebase";
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Login successful, navigate to the main screen
-      navigation.navigate("Buildings");
     } catch (error) {
       console.error("Error logging in:", error);
-      // Handle login error, display an error message to the user
       if (error.code === "auth/invalid-email") {
         Alert.alert("Invalid email", "Please enter a valid email address.");
       } else if (error.code === "auth/user-not-found") {
-        // If user doesn't exist, create a new user
         try {
           await createUserWithEmailAndPassword(auth, email, password);
-          // User created successfully, navigate to the main screen
-          navigation.navigate("Buildings");
         } catch (createError) {
           console.error("Error creating user:", createError);
-          Alert.alert("Error creating user", "An error occurred while creating a new user.");
+          Alert.alert(
+            "Error creating user",
+            "An error occurred while creating a new user."
+          );
         }
       } else if (error.code === "auth/wrong-password") {
         Alert.alert("Wrong password", "Please enter the correct password.");
