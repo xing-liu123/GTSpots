@@ -1,5 +1,5 @@
 import { View, Text, FlatList, Image, TouchableOpacity } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 const API_BASE_URL = "http://172.16.39.27:5001";
@@ -17,7 +17,7 @@ const getStatusColor = (status) => {
   }
 };
 
-export default function HomeScreen() {
+export default function HomeScreen({ userRole }) {
   const navigation = useNavigation();
   const [buildings, setBuildings] = useState([]);
 
@@ -43,9 +43,15 @@ export default function HomeScreen() {
   const renderBuilding = ({ item }) => (
     <TouchableOpacity
       style={styles.buildingContainer}
-      onPress={() =>
-        navigation.navigate("Building Details", { building: item })
-      }
+      onPress={() => {
+        if (userRole === "university") {
+          navigation.navigate("Building Details for University", {
+            building: item,
+          });
+        } else {
+          navigation.navigate("Building Details", { building: item });
+        }
+      }}
     >
       <Image source={{ uri: item.imageUrl }} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{item.name}</Text>
