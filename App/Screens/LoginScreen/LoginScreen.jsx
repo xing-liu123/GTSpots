@@ -25,17 +25,21 @@ export default function LoginScreen({ navigation }) {
       console.error("Error logging in:", error);
       // Handle login error, display an error message to the user
       if (error.code === "auth/invalid-email") {
-        // Handle invalid email error
-        console.log("Invalid email");
+        Alert.alert("Invalid email", "Please enter a valid email address.");
       } else if (error.code === "auth/user-not-found") {
-        // Handle user not found error
-        console.log("User not found");
+        // If user doesn't exist, create a new user
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          // User created successfully, navigate to the main screen
+          navigation.navigate("Buildings");
+        } catch (createError) {
+          console.error("Error creating user:", createError);
+          Alert.alert("Error creating user", "An error occurred while creating a new user.");
+        }
       } else if (error.code === "auth/wrong-password") {
-        // Handle wrong password error
-        console.log("Wrong password");
+        Alert.alert("Wrong password", "Please enter the correct password.");
       } else {
-        // Handle other errors
-        console.log("Other error");
+        Alert.alert("Login error", "An error occurred during login.");
       }
     }
   };

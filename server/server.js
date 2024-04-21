@@ -14,31 +14,6 @@ const port = process.env.PORT || 5001;
 // Middleware
 app.use(express.json());
 
-app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const userRecord = await admin.auth().getUserByEmail(email);
-    const userCredential = await admin
-      .auth()
-      .signInWithEmailAndPassword(email, password);
-    const user = userCredential.user;
-    res.json({ user });
-  } catch (error) {
-    if (error.code === "auth/user-not-found") {
-      try {
-        const userRecord = await admin.auth().createUser({ email, password });
-        res.json({ user: userRecord });
-      } catch (createError) {
-        console.error("Error creating user:", createError);
-        res.status(500).json({ error: "Error creating user" });
-      }
-    } else {
-      console.error("Error during login:", error);
-      res.status(401).json({ error: "Invalid credentials" });
-    }
-  }
-});
-
 app.get("/api/buildings", async (req, res) => {
   try {
     const snapshot = await db.collection("buildings").get();
