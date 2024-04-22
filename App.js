@@ -7,13 +7,20 @@ import UniversityBuildingDetails from "./App/Screens/BuildingDetails/UniversityB
 import { auth, db } from "./App/Config/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import LoginScreen from "./App/Screens/LoginScreen/LoginScreen";
+import ProfileScreen from "./App/Screens/ProfileScreen/ProfileScreen";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { LogBox } from 'react-native';
+
+LogBox.ignoreAllLogs();
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -24,18 +31,22 @@ export default function App() {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUserRole(userData.role || "");
+            setUserEmail(userData.email || "");
           } else {
             console.error("User document does not exist!");
             setUserRole("");
+            setUserEmail("");
           }
         } catch (error) {
           console.error("Error fetching user role:", error);
           setUserRole("");
+          setUserEmail("");
         }
         setUser(user);
       } else {
         setUser(null);
         setUserRole("");
+        setUserEmail("");
       }
       setLoading(false);
     });
@@ -47,31 +58,49 @@ export default function App() {
     return null;
   }
 
+  function BuildingsStack() {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen name="Home">
+          {(props) => <HomeScreen {...props} userRole={userRole} />}
+        </Stack.Screen>
+        <Stack.Screen
+          name="Building Details"
+          component={StudentBuildingDetails}
+        />
+        <Stack.Screen
+          name="Building Details for University"
+          component={UniversityBuildingDetails}
+        />
+      </Stack.Navigator>
+    );
+  }
+
+  function ProfileStack() {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen
+          name="ProfileSreen"
+          component={ProfileScreen}
+          initialParams={{ userRole, userEmail }}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        {user ? (
-          <>
-            <Stack.Screen name="Buildings">
-              {(props) => <HomeScreen {...props} userRole={userRole} />}
-            </Stack.Screen>
-            <Stack.Screen
-              name="Building Details"
-              component={StudentBuildingDetails}
-            />
-            <Stack.Screen
-              name="Building Details for University"
-              component={UniversityBuildingDetails}
-            />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-        )}
-      </Stack.Navigator>
+      {user ? (
+        <Tab.Navigator>
+          <Tab.Screen name="Buildings" component={BuildingsStack} options={{ headerShown: false }} />
+          <Tab.Screen name="Profile" component={ProfileStack} />
+        </Tab.Navigator>
+      ) : (
+        <Stack.Navigator>
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        </Stack.Navigator>
+      )}
     </NavigationContainer>
   );
 }
