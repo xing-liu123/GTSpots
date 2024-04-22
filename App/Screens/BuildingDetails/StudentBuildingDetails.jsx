@@ -14,8 +14,8 @@ import {
   serverTimestamp,
   onSnapshot,
   increment,
+  getDoc,
 } from "firebase/firestore";
-
 import { auth, db } from "../../Config/firebase";
 
 const statusOptions = ["Available", "Limited", "Full"];
@@ -34,75 +34,21 @@ export default function BuildingDetails({ route }) {
   const [socket, setSocket] = useState(building.socket || false);
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now() / 1000);
-  const [hasLiked, setHasLiked] = useState(false);
-  const [hasDisliked, setHasDisliked] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
-  const [voteType, setVoteType] = useState(null);
   const [isUpdateDisabled, setIsUpdateDisabled] = useState(true);
 
-  const handleLike = async () => {
+  const handleVote = async (voteType) => {
+    if (hasVoted) return;
+
     const userId = auth.currentUser.uid;
     const buildingRef = doc(db, "buildings", building.id);
 
-    if (voteType === "like") {
-      // User has already liked, so remove the like
-      await updateDoc(buildingRef, {
-        likeCount: increment(-1),
-        [`votes.${userId}`]: null,
-      });
-      setHasVoted(false);
-      setVoteType(null);
-    } else {
-      // User hasn't liked or has disliked, so add/update the like
-      const updates = {
-        likeCount: increment(1),
-        [`votes.${userId}`]: "like",
-      };
-      if (voteType === "dislike") {
-        updates.dislikeCount = increment(-1);
-      }
-      await updateDoc(buildingRef, updates);
-      setHasVoted(true);
-      setVoteType("like");
-    }
-  };
-
-  const handleDislike = async () => {
-    const userId = auth.currentUser.uid;
-    const buildingRef = doc(db, "buildings", building.id);
-
-    if (voteType === "dislike") {
-      // User has already disliked, so remove the dislike
-      await updateDoc(buildingRef, {
-        dislikeCount: increment(-1),
-        [`votes.${userId}`]: null,
-      });
-      setHasVoted(false);
-      setVoteType(null);
-    } else {
-      // User hasn't disliked or has liked, so add/update the dislike
-      const updates = {
-        dislikeCount: increment(1),
-        [`votes.${userId}`]: "dislike",
-      };
-      if (voteType === "like") {
-        updates.likeCount = increment(-1);
-      }
-      await updateDoc(buildingRef, updates);
-      setHasVoted(true);
-      setVoteType("dislike");
-    }
-  };
-
-  const resetVotes = async () => {
-    const buildingRef = doc(db, "buildings", building.id);
     await updateDoc(buildingRef, {
-      likeCount: 0,
-      dislikeCount: 0,
-      votes: {},
+      [voteType === "like" ? "likeCount" : "dislikeCount"]: increment(1),
+      [`votes.${userId}`]: voteType,
     });
-    setHasVoted(false);
-    setVoteType(null);
+
+    setHasVoted(true);
   };
 
   useEffect(() => {
@@ -121,20 +67,13 @@ export default function BuildingDetails({ route }) {
       );
 
       // Check if the user has already voted
-      if (updatedData.votes && updatedData.votes[userId]) {
-        setHasVoted(true);
-        setVoteType(updatedData.votes[userId]);
-      } else {
-        setHasVoted(false);
-        setVoteType(null);
-      }
+      setHasVoted(updatedData.votes && updatedData.votes[userId]);
     });
 
     return () => unsubscribe();
   }, [building.id]);
 
   useEffect(() => {
-    // Check if any fields have been modified (except likes/dislikes)
     const isModified =
       status !== buildingData.status ||
       noiseLevel !== buildingData.noiseLevel ||
@@ -176,13 +115,39 @@ export default function BuildingDetails({ route }) {
       monitor,
       socket,
       lastUpdateTime: serverTimestamp(),
+      likeCount: 0,
+      dislikeCount: 0,
+      votes: {},
     };
     await updateDoc(doc(db, "buildings", building.id), updatedBuilding);
-    Alert.alert("Success", "Updates successfully saved.");
-    if (status !== buildingData.status) {
-      resetVotes();
+
+    const userId = auth.currentUser.uid;
+    const userRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const userLastUpdateTime = userData.lastUpdateTime
+        ? userData.lastUpdateTime.toDate()
+        : null;
+      const currentTime = new Date();
+      if (
+        !userLastUpdateTime ||
+        moment(currentTime).diff(moment(userLastUpdateTime), "hours") >= 1
+      ) {
+        await updateDoc(userRef, {
+          points: increment(1),
+          lastUpdateTime: serverTimestamp(),
+        });
+      }
+    } else {
+      await setDoc(userRef, {
+        points: 1,
+        lastUpdateTime: serverTimestamp(),
+      });
     }
 
+    Alert.alert("Success", "Updates successfully saved.");
     setIsUpdateDisabled(true);
   };
 
@@ -215,22 +180,18 @@ export default function BuildingDetails({ route }) {
         </Text>
         <View style={styles.votingContainer}>
           <TouchableOpacity
-            style={[
-              styles.voteButton,
-              voteType === "like" && styles.activeVoteButton,
-            ]}
-            onPress={handleLike}
+            style={[styles.voteButton, hasVoted && styles.activeVoteButton]}
+            onPress={() => handleVote("like")}
+            disabled={hasVoted}
           >
             <Text style={styles.voteButtonText}>
               👍 {buildingData.likeCount || 0}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.voteButton,
-              voteType === "dislike" && styles.activeVoteButton,
-            ]}
-            onPress={handleDislike}
+            style={[styles.voteButton, hasVoted && styles.activeVoteButton]}
+            onPress={() => handleVote("dislike")}
+            disabled={hasVoted}
           >
             <Text style={styles.voteButtonText}>
               👎 {buildingData.dislikeCount || 0}

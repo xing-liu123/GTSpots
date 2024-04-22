@@ -1,11 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../../Config/firebase";
 
 export default function ProfileScreen({ route }) {
   const { userData } = route.params;
   const [username, setUsername] = useState(userData?.username || "");
+  const [points, setPoints] = useState(userData?.points || 0);
+
+  useEffect(() => {
+    const userDocRef = doc(db, "users", userData.id);
+    const unsubscribe = onSnapshot(userDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const updatedUserData = snapshot.data();
+        setPoints(updatedUserData.points || 0);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [userData.id]);
 
   const handleUpdateUsername = async () => {
     console.log(userData.id);
@@ -38,8 +51,8 @@ export default function ProfileScreen({ route }) {
         <Text style={styles.info}>{userData?.role}</Text>
       </View>
       <View style={styles.infoContainer}>
-        <Text style={styles.label}>Likes:</Text>
-        <Text style={styles.info}>{userData?.likes || 0}</Text>
+        <Text style={styles.label}>Bonus Points:</Text>
+        <Text style={styles.info}>{points}</Text>
       </View>
       <TouchableOpacity style={styles.updateButton} onPress={handleUpdateUsername}>
         <Text style={styles.updateButtonText}>Update Username</Text>
