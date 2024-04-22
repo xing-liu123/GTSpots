@@ -19,8 +19,7 @@ const Tab = createBottomTabNavigator();
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -29,27 +28,27 @@ export default function App() {
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserRole(userData.role || "");
-            setUserEmail(userData.email || "");
+            const userData = {
+              id: userDoc.id,
+              ...userDoc.data(),
+            };
+            setUserData(userData);
           } else {
             console.error("User document does not exist!");
-            setUserRole("");
-            setUserEmail("");
+            setUserData(null);
           }
         } catch (error) {
-          console.error("Error fetching user role:", error);
-          setUserRole("");
-          setUserEmail("");
+          console.error("Error fetching user data:", error);
+          setUserData(null);
         }
         setUser(user);
       } else {
         setUser(null);
-        setUserRole("");
-        setUserEmail("");
+        setUserData(null);
       }
       setLoading(false);
     });
+  
     return () => unsubscribe();
   }, []);
 
@@ -62,7 +61,7 @@ export default function App() {
     return (
       <Stack.Navigator>
         <Stack.Screen name="Home">
-          {(props) => <HomeScreen {...props} userRole={userRole} />}
+          {(props) => <HomeScreen {...props} userRole={userData?.role} />}
         </Stack.Screen>
         <Stack.Screen
           name="Building Details"
@@ -82,7 +81,7 @@ export default function App() {
         <Stack.Screen
           name="ProfileSreen"
           component={ProfileScreen}
-          initialParams={{ userRole, userEmail }}
+          initialParams={{ userData }}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
