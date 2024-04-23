@@ -3,8 +3,8 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  ScrollView,
   Alert,
+  TextInput,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import moment from "moment";
@@ -15,8 +15,10 @@ import {
   onSnapshot,
   increment,
   getDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { auth, db } from "../../Config/firebase";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const statusOptions = ["Available", "Limited", "Full"];
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
@@ -36,7 +38,7 @@ export default function BuildingDetails({ route }) {
   const [currentTime, setCurrentTime] = useState(Date.now() / 1000);
   const [hasVoted, setHasVoted] = useState(false);
   const [isUpdateDisabled, setIsUpdateDisabled] = useState(true);
-
+  const [comment, setComment] = useState("");
   const handleVote = async (voteType) => {
     if (hasVoted) return;
 
@@ -49,6 +51,39 @@ export default function BuildingDetails({ route }) {
     });
 
     setHasVoted(true);
+  };
+
+  const handleCommentSubmit = async () => {
+    if (comment.trim() === "") {
+      Alert.alert("Error", "Please enter a comment.");
+      return;
+    }
+
+    const userId = auth.currentUser.uid;
+    const userRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const newComment = {
+        userId,
+        username: userData.username || "",
+        text: comment.trim(),
+        timestamp: new Date(),
+      };
+
+      const buildingRef = doc(db, "buildings", building.id);
+      try {
+        await updateDoc(buildingRef, {
+          comments: arrayUnion(newComment),
+        });
+        Alert.alert("Success", "Comment submitted successfully!");
+        setComment("");
+      } catch (error) {
+        console.error("Error submitting comment:", error);
+        Alert.alert("Error", "Failed to submit comment. Please try again.");
+      }
+    }
   };
 
   useEffect(() => {
@@ -152,7 +187,7 @@ export default function BuildingDetails({ route }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAwareScrollView contentContainerStyle={styles.container}>
       <Image
         source={{ uri: buildingData.imageUrl }}
         style={styles.buildingImage}
@@ -265,7 +300,41 @@ export default function BuildingDetails({ route }) {
       >
         <Text style={styles.updateButtonText}>Update Status</Text>
       </TouchableOpacity>
-    </ScrollView>
+
+      <View style={styles.commentSection}>
+        <TextInput
+          style={styles.commentInput}
+          placeholder="Write a comment..."
+          value={comment}
+          onChangeText={setComment}
+        />
+        <TouchableOpacity
+          style={styles.commentButton}
+          onPress={handleCommentSubmit}
+        >
+          <Text style={styles.commentButtonText}>Submit</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.commentList}>
+        {buildingData.comments &&
+          buildingData.comments
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .map((comment, index) => (
+              <View key={index} style={styles.commentItem}>
+                <Text style={styles.commentUsername}>{comment.username}</Text>
+                <Text style={styles.commentText}>{comment.text}</Text>
+                <Text style={styles.commentTimestamp}>
+                  {comment.timestamp.toDate
+                    ? moment(comment.timestamp.toDate()).format(
+                        "YYYY-MM-DD HH:mm"
+                      )
+                    : "Invalid Date"}
+                </Text>
+              </View>
+            ))}
+      </View>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -352,6 +421,7 @@ const styles = {
     width: 130,
     height: 45,
     justifyContent: "center",
+    marginBottom: 16,
   },
   updateButtonText: {
     color: "white",
@@ -385,5 +455,51 @@ const styles = {
   },
   disabledButton: {
     backgroundColor: "#ccc",
+  },
+  commentSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    marginTop: 16,
+  },
+  commentInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    marginRight: 8,
+  },
+  commentButton: {
+    backgroundColor: "#007fff",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  commentButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  commentList: {
+    width: "100%",
+  },
+  commentItem: {
+    backgroundColor: "#f0f0f0",
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  commentUsername: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  commentText: {
+    marginBottom: 4,
+  },
+  commentTimestamp: {
+    fontSize: 12,
+    color: "gray",
   },
 };
