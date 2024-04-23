@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import HomeScreen from "./App/Screens/HomeScreen/HomeScreen";
 import { NavigationContainer } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import StudentBuildingDetails from "./App/Screens/BuildingDetails/StudentBuildingDetails";
 import UniversityBuildingDetails from "./App/Screens/BuildingDetails/UniversityBuildingDetails";
@@ -9,7 +10,7 @@ import { doc, getDoc } from "firebase/firestore";
 import LoginScreen from "./App/Screens/LoginScreen/LoginScreen";
 import ProfileScreen from "./App/Screens/ProfileScreen/ProfileScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { LogBox } from 'react-native';
+import { LogBox } from "react-native";
 
 LogBox.ignoreAllLogs();
 
@@ -48,7 +49,7 @@ export default function App() {
       }
       setLoading(false);
     });
-  
+
     return () => unsubscribe();
   }, []);
 
@@ -76,12 +77,22 @@ export default function App() {
   }
 
   function ProfileStack() {
+    const navigation = useNavigation();
+
     return (
       <Stack.Navigator>
         <Stack.Screen
-          name="ProfileSreen"
+          name="ProfileScreen"
           component={ProfileScreen}
           initialParams={{ userData }}
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
@@ -92,12 +103,20 @@ export default function App() {
     <NavigationContainer>
       {user ? (
         <Tab.Navigator>
-          <Tab.Screen name="Buildings" component={BuildingsStack} options={{ headerShown: false }} />
+          <Tab.Screen
+            name="Buildings"
+            component={BuildingsStack}
+            options={{ headerShown: false }}
+          />
           <Tab.Screen name="Profile" component={ProfileStack} />
         </Tab.Navigator>
       ) : (
         <Stack.Navigator>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
         </Stack.Navigator>
       )}
     </NavigationContainer>
