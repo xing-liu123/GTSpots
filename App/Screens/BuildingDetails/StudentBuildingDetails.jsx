@@ -20,14 +20,15 @@ import {
 import { auth, db } from "../../Config/firebase";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
-const statusOptions = ["Available", "Limited", "Full"];
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
 const wifiStabilityOptions = ["Strong", "Unstable", "Weak"];
 
 export default function BuildingDetails({ route }) {
   const { building } = route.params;
   const [buildingData, setBuildingData] = useState(building);
-  const [status, setStatus] = useState(building.status);
+  const [occupancyLevel, setOccupancyLevel] = useState(
+    building.occupancyLevel || 0
+  );
   const [noiseLevel, setNoiseLevel] = useState(building.noiseLevel || "Quiet");
   const [wifiStability, setWifiStability] = useState(
     building.wifiStability || "Strong"
@@ -39,6 +40,7 @@ export default function BuildingDetails({ route }) {
   const [hasVoted, setHasVoted] = useState(false);
   const [isUpdateDisabled, setIsUpdateDisabled] = useState(true);
   const [comment, setComment] = useState("");
+
   const handleVote = async (voteType) => {
     if (hasVoted) return;
 
@@ -92,7 +94,7 @@ export default function BuildingDetails({ route }) {
     const unsubscribe = onSnapshot(buildingRef, (doc) => {
       const updatedData = doc.data();
       setBuildingData(updatedData);
-      setStatus(updatedData.status);
+      setOccupancyLevel(updatedData.occupancyLevel || 0);
       setNoiseLevel(updatedData.noiseLevel);
       setWifiStability(updatedData.wifiStability);
       setMonitor(updatedData.monitor);
@@ -110,14 +112,14 @@ export default function BuildingDetails({ route }) {
 
   useEffect(() => {
     const isModified =
-      status !== buildingData.status ||
+      occupancyLevel !== buildingData.occupancyLevel ||
       noiseLevel !== buildingData.noiseLevel ||
       wifiStability !== buildingData.wifiStability ||
       monitor !== buildingData.monitor ||
       socket !== buildingData.socket;
 
     setIsUpdateDisabled(!isModified);
-  }, [status, noiseLevel, wifiStability, monitor, socket, buildingData]);
+  }, [occupancyLevel, noiseLevel, wifiStability, monitor, socket, buildingData]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -144,7 +146,7 @@ export default function BuildingDetails({ route }) {
 
   const handleUpdateStatus = async () => {
     const updatedBuilding = {
-      status,
+      occupancyLevel,
       noiseLevel,
       wifiStability,
       monitor,
@@ -186,6 +188,16 @@ export default function BuildingDetails({ route }) {
     setIsUpdateDisabled(true);
   };
 
+  const getStatusColor = (occupancyLevel) => {
+    if (occupancyLevel >= 0 && occupancyLevel <= 60) {
+      return "green";
+    } else if (occupancyLevel >= 61 && occupancyLevel <= 90) {
+      return "orange";
+    } else {
+      return "red";
+    }
+  };
+
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.container}>
       <Image
@@ -195,21 +207,16 @@ export default function BuildingDetails({ route }) {
       <Text style={styles.buildingName}>{buildingData.name}</Text>
 
       <View style={styles.optionContainer}>
-        <Text style={styles.label}>Availability:</Text>
-        <View style={styles.circleContainer}>
-          {statusOptions.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.circle,
-                status === option ? styles.selectedCircle : null,
-              ]}
-              onPress={() => setStatus(option)}
-            >
-              <Text style={styles.circleText}>{option}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={styles.label}>Occupancy Level:</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={occupancyLevel.toString()}
+          onChangeText={(text) => setOccupancyLevel(parseInt(text) || 0)}
+        />
+        <Text style={[styles.statusText, { color: getStatusColor(occupancyLevel) }]}>
+          {occupancyLevel}%
+        </Text>
         <Text style={styles.updateTime}>
           Last updated: {getTimeDifference()}
         </Text>
@@ -365,6 +372,20 @@ const styles = {
   label: {
     fontSize: 16,
     marginBottom: 8,
+  },
+  input: {
+    width: "100%",
+    height: 40,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 8,
   },
   circleContainer: {
     flexDirection: "row",

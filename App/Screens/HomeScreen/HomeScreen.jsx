@@ -7,6 +7,7 @@ import {
   Modal,
   Button,
   SafeAreaView,
+  TextInput,
 } from "react-native";
 import React, { useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -14,33 +15,23 @@ import { Ionicons } from "@expo/vector-icons";
 
 const API_BASE_URL = "http://172.16.39.27:5001";
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case "Available":
-      return "green";
-    case "Limited":
-      return "orange";
-    case "Full":
-      return "red";
-    default:
-      return "black";
+const getStatusColor = (occupancyLevel) => {
+  if (occupancyLevel >= 0 && occupancyLevel <= 60) {
+    return "green";
+  } else if (occupancyLevel >= 61 && occupancyLevel <= 90) {
+    return "orange";
+  } else {
+    return "red";
   }
 };
 
 const FilterModal = ({ visible, onClose, onApply, onClear }) => {
-  const [selectedAvailability, setSelectedAvailability] = useState([]);
+  const [occupancyLevelMin, setOccupancyLevelMin] = useState(0);
+  const [occupancyLevelMax, setOccupancyLevelMax] = useState(100);
   const [selectedNoiseLevel, setSelectedNoiseLevel] = useState([]);
   const [selectedWifiStability, setSelectedWifiStability] = useState([]);
   const [selectedMonitor, setSelectedMonitor] = useState(false);
   const [selectedSocket, setSelectedSocket] = useState(false);
-
-  const handleAvailabilitySelection = (option) => {
-    if (selectedAvailability.includes(option)) {
-      setSelectedAvailability(selectedAvailability.filter((item) => item !== option));
-    } else {
-      setSelectedAvailability([...selectedAvailability, option]);
-    }
-  };
 
   const handleNoiseLevelSelection = (option) => {
     if (selectedNoiseLevel.includes(option)) {
@@ -60,7 +51,8 @@ const FilterModal = ({ visible, onClose, onApply, onClear }) => {
 
   const handleApplyFilter = () => {
     onApply({
-      availability: selectedAvailability,
+      occupancyLevelMin,
+      occupancyLevelMax,
       noiseLevel: selectedNoiseLevel,
       wifiStability: selectedWifiStability,
       monitor: selectedMonitor,
@@ -70,7 +62,8 @@ const FilterModal = ({ visible, onClose, onApply, onClear }) => {
   };
 
   const handleClearFilter = () => {
-    setSelectedAvailability([]);
+    setOccupancyLevelMin(0);
+    setOccupancyLevelMax(100);
     setSelectedNoiseLevel([]);
     setSelectedWifiStability([]);
     setSelectedMonitor(false);
@@ -85,21 +78,22 @@ const FilterModal = ({ visible, onClose, onApply, onClear }) => {
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Filter Options</Text>
 
-          {/* Availability */}
-          <Text style={styles.modalLabel}>Availability:</Text>
-          <View style={styles.modalOptionContainer}>
-            {["Available", "Limited", "Full"].map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.modalOption,
-                  selectedAvailability.includes(option) && styles.selectedModalOption,
-                ]}
-                onPress={() => handleAvailabilitySelection(option)}
-              >
-                <Text style={styles.modalOptionText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Occupancy Level */}
+          <Text style={styles.modalLabel}>Occupancy Level:</Text>
+          <View style={styles.modalRangeContainer}>
+            <TextInput
+              style={styles.modalRangeInput}
+              keyboardType="numeric"
+              value={occupancyLevelMin.toString()}
+              onChangeText={(text) => setOccupancyLevelMin(parseInt(text) || 0)}
+            />
+            <Text style={styles.modalRangeText}>to</Text>
+            <TextInput
+              style={styles.modalRangeInput}
+              keyboardType="numeric"
+              value={occupancyLevelMax.toString()}
+              onChangeText={(text) => setOccupancyLevelMax(parseInt(text) || 100)}
+            />
           </View>
 
           {/* Noise Level */}
@@ -217,7 +211,8 @@ export default function HomeScreen({ userRole }) {
 
   const filteredBuildings = buildings.filter((building) => {
     const {
-      availability,
+      occupancyLevelMin,
+      occupancyLevelMax,
       noiseLevel,
       wifiStability,
       monitor,
@@ -226,7 +221,8 @@ export default function HomeScreen({ userRole }) {
 
     if (
       Object.keys(selectedFilters).length === 0 ||
-      (availability.length === 0 &&
+      (occupancyLevelMin === 0 &&
+        occupancyLevelMax === 100 &&
         noiseLevel.length === 0 &&
         wifiStability.length === 0 &&
         monitor === false &&
@@ -235,7 +231,10 @@ export default function HomeScreen({ userRole }) {
       return true;
     }
 
-    if (availability.length > 0 && !availability.includes(building.status)) {
+    if (
+      building.occupancyLevel < occupancyLevelMin ||
+      building.occupancyLevel > occupancyLevelMax
+    ) {
       return false;
     }
     if (noiseLevel.length > 0 && !noiseLevel.includes(building.noiseLevel)) {
@@ -268,7 +267,9 @@ export default function HomeScreen({ userRole }) {
     >
       <Image source={{ uri: item.imageUrl }} style={styles.buildingImage} />
       <Text style={styles.buildingName}>{item.name}</Text>
-      <Text style={{ color: getStatusColor(item.status) }}>{item.status}</Text>
+      <Text style={[styles.buildingOccupancy, { color: getStatusColor(item.occupancyLevel) }]}>
+        {item.occupancyLevel}%
+      </Text>
     </TouchableOpacity>
   );
 
@@ -329,9 +330,8 @@ const styles = {
     fontWeight: "bold",
     marginTop: 8,
   },
-  buildingStatus: {
+  buildingOccupancy: {
     fontSize: 14,
-    color: "#888",
     marginTop: 4,
   },
   modalContainer: {
@@ -352,6 +352,23 @@ const styles = {
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 8,
+  },
+  modalRangeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  modalRangeInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginRight: 8,
+  },
+  modalRangeText: {
+    marginRight: 8,
   },
   modalOptionContainer: {
     flexDirection: "row",
