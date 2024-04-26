@@ -12,7 +12,7 @@ import React, { useState } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-const API_BASE_URL = "http://172.16.39.27:5001";
+const API_BASE_URL = "https://gtspots-image-4rsf4var4a-uc.a.run.app";
 
 const getStatusColor = (status) => {
   switch (status) {
