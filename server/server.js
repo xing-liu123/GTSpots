@@ -43,6 +43,62 @@ app.put("/api/buildings/:id", async (req, res) => {
   }
 });
 
+app.post("/api/buildings/:id/comments", async (req, res) => {
+  const { id } = req.params;
+  const { comment } = req.body;
+  try {
+    await db
+      .collection("buildings")
+      .doc(id)
+      .update({
+        comments: admin.firestore.FieldValue.arrayUnion(comment),
+      });
+    res.status(201).json({ message: "Comment submitted successfully" });
+  } catch (error) {
+    console.error("Error submitting comment:", error);
+    res.status(500).json({ error: "Error submitting comment" });
+  }
+});
+
+app.put("/api/buildings/:id/votes", async (req, res) => {
+  const { id } = req.params;
+  const { userId, voteType } = req.body;
+  try {
+    const buildingRef = db.collection("buildings").doc(id);
+    const buildingDoc = await buildingRef.get();
+
+    if (buildingDoc.exists) {
+      const buildingData = buildingDoc.data();
+      const votes = buildingData.votes || {};
+
+      if (votes[userId] === voteType) {
+        // User has already voted with the same vote type, so remove the vote
+        await buildingRef.update({
+          [`votes.${userId}`]: admin.firestore.FieldValue.delete(),
+          [voteType === "like" ? "likeCount" : "dislikeCount"]:
+            admin.firestore.FieldValue.increment(-1),
+        });
+      } else {
+        // User hasn't voted or has changed their vote type
+        await buildingRef.update({
+          [`votes.${userId}`]: voteType,
+          [voteType === "like" ? "likeCount" : "dislikeCount"]:
+            admin.firestore.FieldValue.increment(1),
+          [voteType === "like" ? "dislikeCount" : "likeCount"]:
+            admin.firestore.FieldValue.increment(votes[userId] ? -1 : 0),
+        });
+      }
+
+      res.json({ message: "Vote updated successfully" });
+    } else {
+      res.status(404).json({ error: "Building not found" });
+    }
+  } catch (error) {
+    console.error("Error updating vote:", error);
+    res.status(500).json({ error: "Error updating vote" });
+  }
+});
+
 // Routes
 app.get("/", (req, res) => {
   res.send("Welcome to Campus Study Spots API");
