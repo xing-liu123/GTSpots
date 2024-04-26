@@ -11,14 +11,14 @@ import moment from "moment";
 import {
   doc,
   updateDoc,
-  serverTimestamp,
   onSnapshot,
-  increment,
   getDoc,
   arrayUnion,
 } from "firebase/firestore";
 import { auth, db } from "../../Config/firebase";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
+const API_BASE_URL = "https://gtspots-image-4rsf4var4a-uc.a.run.app";
 
 const noiseLevelOptions = ["Quiet", "Moderate", "Loud"];
 const wifiStabilityOptions = ["Strong", "Unstable", "Weak"];
@@ -42,17 +42,26 @@ export default function BuildingDetails({ route }) {
   const [comment, setComment] = useState("");
 
   const handleVote = async (voteType) => {
-    if (hasVoted) return;
-
-    const userId = auth.currentUser.uid;
-    const buildingRef = doc(db, "buildings", building.id);
-
-    await updateDoc(buildingRef, {
-      [voteType === "like" ? "likeCount" : "dislikeCount"]: increment(1),
-      [`votes.${userId}`]: voteType,
-    });
-
-    setHasVoted(true);
+    if (hasVoted && voteType === buildingData.votes[auth.currentUser.uid]) return;
+  
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/buildings/${building.id}/votes`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: auth.currentUser.uid, voteType }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to update vote");
+      }
+  
+      setHasVoted(true);
+    } catch (error) {
+      console.error("Error updating vote:", error);
+      Alert.alert("Error", "Failed to update vote. Please try again.");
+    }
   };
 
   const handleCommentSubmit = async () => {
@@ -151,41 +160,31 @@ export default function BuildingDetails({ route }) {
       wifiStability,
       monitor,
       socket,
-      lastUpdateTime: serverTimestamp(),
+      lastUpdateTime: new Date(),
       likeCount: 0,
       dislikeCount: 0,
       votes: {},
     };
-    await updateDoc(doc(db, "buildings", building.id), updatedBuilding);
 
-    const userId = auth.currentUser.uid;
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
-
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      const userLastUpdateTime = userData.lastUpdateTime
-        ? userData.lastUpdateTime.toDate()
-        : null;
-      const currentTime = new Date();
-      if (
-        !userLastUpdateTime ||
-        moment(currentTime).diff(moment(userLastUpdateTime), "hours") >= 1
-      ) {
-        await updateDoc(userRef, {
-          points: increment(1),
-          lastUpdateTime: serverTimestamp(),
-        });
-      }
-    } else {
-      await setDoc(userRef, {
-        points: 1,
-        lastUpdateTime: serverTimestamp(),
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/buildings/${building.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedBuilding),
       });
-    }
 
-    Alert.alert("Success", "Updates successfully saved.");
-    setIsUpdateDisabled(true);
+      if (!response.ok) {
+        throw new Error("Failed to update building status");
+      }
+
+      Alert.alert("Success", "Updates successfully saved.");
+      setIsUpdateDisabled(true);
+    } catch (error) {
+      console.error("Error updating building status:", error);
+      Alert.alert("Error", "Failed to update building status. Please try again.");
+    }
   };
 
   const getStatusColor = (occupancyLevel) => {
