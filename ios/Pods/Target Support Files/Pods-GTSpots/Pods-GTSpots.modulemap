@@ -1,0 +1,6 @@
+module Pods_GTSpots {
+  umbrella header "Pods-GTSpots-umbrella.h"
+
+  export *
+  module * { export * }
+}
